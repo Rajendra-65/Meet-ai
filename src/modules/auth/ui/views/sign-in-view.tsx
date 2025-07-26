@@ -20,6 +20,8 @@ import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {FaGithub , FaGoogle} from "react-icons/fa";
 
 const formSchema = z.object({
     email: z.email(),
@@ -29,6 +31,7 @@ const formSchema = z.object({
 export const SignInView = () => {
     const [error,setError] = useState("");
     const [pending,setPending] = useState(false);
+    const router = useRouter()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -49,6 +52,7 @@ export const SignInView = () => {
         },{
             onSuccess : () => {
                 setPending(false);
+                router.push('/')
             },
             onError : ({error}) => {
                 setError(error.message);
@@ -167,7 +171,7 @@ export const SignInView = () => {
                                         type = "button"
                                         className = "w-full"
                                     >
-                                        Google
+                                        <FaGoogle/>
                                     </Button>
                                     <Button
                                         disabled = {pending}
@@ -176,7 +180,7 @@ export const SignInView = () => {
                                         type = "button"
                                         className = "w-full"
                                     >
-                                        GitHub
+                                        <FaGithub/>
                                     </Button>
                                 </div>
                                 <div className = "text-center text-sm">
