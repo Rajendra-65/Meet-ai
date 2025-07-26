@@ -19,55 +19,74 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const formSchema = z.object({
-    name : z.string().min(1,{ message : "Name is required"}),
-    email : z.email(),
+    name: z.string().min(1, { message: "Name is required" }),
+    email: z.email(),
     password: z.string().min(1, { message: "Password is required" }),
-    confirmPassword : z.string().min(1,{ message : "Password is required"})
+    confirmPassword: z.string().min(1, { message: "Password is required" })
 })
-.refine((data)=> data.password === data.confirmPassword,{
-    message : "Passwords don't match",
-    path : ["confirmPassword"],
-})
+    .refine((data) => data.password === data.confirmPassword, {
+        message: "Passwords don't match",
+        path: ["confirmPassword"],
+    })
 
 export const SignUpView = () => {
-    const router = useRouter();
-    const [error,setError] = useState("");
-    const [pending,setPending] = useState(false);
+    const [error, setError] = useState("");
+    const [pending, setPending] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name : "",
+            name: "",
             email: "",
             password: "",
-            confirmPassword : ""
+            confirmPassword: ""
         }
     });
 
-    const onSubmit = async (data : z.infer<typeof formSchema>) => {
+    const onSubmit = async (data: z.infer<typeof formSchema>) => {
         setError("");
         setPending(true);
         console.log("code reached...")
 
         authClient.signUp.email({
-            name : data.name,
-            email : data.email,
-            password : data.password,
-        },{
-            onSuccess : () => {
-                router.push('/');
+            name: data.name,
+            email: data.email,
+            password: data.password,
+            callbackURL : "/"
+        }, {
+            onSuccess: () => {
                 setPending(false);
             },
-            onError : ({error}) => {
+            onError: ({ error }) => {
                 setError(error.message);
                 setPending(false);
             }
         },
-      )
+        )
+    }
+
+    const onSocial = (provider : "github" | "google") => {
+        setError("");
+        setPending(true);
+
+        authClient.signIn.social(
+            {
+                provider : provider,
+                callbackURL : "/"
+            },
+            {
+                onSuccess : () => {
+                    setPending(false);
+                },
+                onError:({error})=> {
+                    setPending(false)
+                    setError(error.message)
+                },
+            }
+        )
     }
 
     return (
@@ -77,7 +96,7 @@ export const SignUpView = () => {
                     <Form {...form}>
                         <form
                             className="p-6 md:p-8"
-                            onSubmit = {form.handleSubmit(onSubmit)}
+                            onSubmit={form.handleSubmit(onSubmit)}
                         >
                             <div className="flex flex-col gap-6">
                                 <div className="flex flex-col items-center text-center">
@@ -174,47 +193,51 @@ export const SignUpView = () => {
                                 </div>
                                 {
                                     error.length > 1 && (
-                                        <Alert className = "bg-destructive/10 borrder-none">
-                                            <OctagonAlertIcon className = "h-4 w-4 !text-destructive"/>
+                                        <Alert className="bg-destructive/10 borrder-none">
+                                            <OctagonAlertIcon className="h-4 w-4 !text-destructive" />
                                             <AlertTitle>{error}</AlertTitle>
                                         </Alert>
                                     )
                                 }
                                 <Button
-                                    disabled = {pending}
-                                    type = "submit"
-                                    className = "w-full"
+                                    disabled={pending}
+                                    type="submit"
+                                    className="w-full"
                                 >
                                     Sign Up
                                 </Button>
-                                <div className = "after:border-border relative text-center text-sm after:absolute after:inset-0 after:z-0 after:flex after:items-center after:border-t">
-                                    <span className = "bg-card text-muted-foreground relative z-10 px-2">
+                                <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:z-0 after:flex after:items-center after:border-t">
+                                    <span className="bg-card text-muted-foreground relative z-10 px-2">
                                         or Continue with
                                     </span>
                                 </div>
-                                <div className = "grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                                     <Button
-                                        variant = "outline"
-                                        type = "button"
-                                        className = "w-full"
+                                        disabled = {pending}
+                                        onClick = {()=>onSocial("google")}
+                                        variant="outline"
+                                        type="button"
+                                        className="w-full"
                                     >
                                         Google
                                     </Button>
                                     <Button
-                                        variant = "outline"
-                                        type = "button"
-                                        className = "w-full"
+                                        disabled = {pending}
+                                        onClick = {()=>onSocial("github")}
+                                        variant="outline"
+                                        type="button"
+                                        className="w-full"
                                     >
                                         GitHub
                                     </Button>
                                 </div>
-                                <div className = "text-center text-sm">
-                                    Already have an account ? 
+                                <div className="text-center text-sm">
+                                    Already have an account ?
                                     {" "}
-                                    <Link 
-                                        href = "/sign-in"
-                                        className = "underline underline-offset-4"
-                                    > 
+                                    <Link
+                                        href="/sign-in"
+                                        className="underline underline-offset-4"
+                                    >
                                         Sign In
                                     </Link>
                                 </div>
@@ -235,8 +258,8 @@ export const SignUpView = () => {
                     </div>
                 </CardContent>
             </Card>
-            <div className = "text-muted-foregound *[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-                By clicking continue , you agree to our <a href = "#">Terms of Service</a> and <a>Privacy Policy</a>
+            <div className="text-muted-foregound *[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
+                By clicking continue , you agree to our <a href="#">Terms of Service</a> and <a>Privacy Policy</a>
             </div>
         </div>
     )
